@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>면적모멘트·주축 시뮬레이터 v3</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    margin:0;
+    background:linear-gradient(180deg,#eef4ff 0%,#f8fbff 100%);
+    color:#111827
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:14px}
+  .card{
+    background:white;
+    border-radius:20px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 4px 14px rgba(58,94,155,.10);
+    border:1px solid #e5edf9
+  }
+  h1{font-size:22px;margin:0 0 8px;color:#1e3a8a}
+  h2{font-size:17px;margin:0 0 10px;color:#1f2937}
+  h3{font-size:15px;margin:12px 0 8px;color:#334155}
+  label{display:block;font-size:13px;font-weight:800;margin:8px 0 4px;color:#374151}
+  input,select,button{
+    font-size:16px;
+    border:1px solid #cbd5e1;
+    border-radius:12px;
+    padding:10px 12px;
+    background:white;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  input[type=range]{
+    padding:0;
+    accent-color:#2563eb;
+  }
+  input:focus,select:focus{
+    outline:none;
+    border-color:#3b82f6;
+    box-shadow:0 0 0 3px rgba(59,130,246,.15);
+  }
+  button{
+    cursor:pointer;
+    width:auto;
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    color:#1d4ed8;
+    font-weight:700;
+  }
+  button:hover{background:#dbeafe}
+  .grid{display:grid;grid-template-columns:minmax(0,350px) minmax(0,1fr);gap:14px}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  .result{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .box{background:#f8fbff;border:1px solid #dbeafe;border-radius:16px;padding:12px}
+  .hero{background:linear-gradient(135deg,#ffffff 0%,#eff6ff 100%);border:1px solid #dbeafe}
+  .blue{background:#eef6ff;border:1px solid #cfe3ff}
+  .green{background:#effcf4;border:1px solid #ccefd7}
+  .orange{background:#fff6ea;border:1px solid #ffe1b5}
+  .purple{background:#f6f1ff;border:1px solid #ddd0ff}
+  .pink{background:#fff1f6;border:1px solid #ffd2e1}
+  svg{width:100%;height:auto;background:white;border:1px solid #d7e3f5;border-radius:16px}
+  .formula{font-size:13px;color:#6b7280;margin-top:8px;line-height:1.55}
+  .small{font-size:13px;color:#64748b;line-height:1.55}
+  .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:800;margin-bottom:8px}
+  .calcbox{
+    background:#0f172a;
+    color:#e5e7eb;
+    border-radius:16px;
+    padding:14px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:13px;
+    line-height:1.75;
+    overflow:auto;
+    white-space:pre-wrap;
+  }
+  .value-chip{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    background:#e0f2fe;
+    color:#075985;
+    font-size:12px;
+    font-weight:800;
+  }
+  .range-row{display:grid;grid-template-columns:1fr 72px;gap:8px;align-items:center}
+  @media(max-width:1180px){.grid{grid-template-columns:1fr}}
+  @media(max-width:900px){.result{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:640px){
+    .wrap{padding:10px}
+    h1{font-size:20px}
+    .row,.result{grid-template-columns:1fr}
+    .card{padding:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card hero">
+    <div class="badge">수업용 인터랙티브 도구 v3</div>
+    <h1>면적 1차·2차·상승모멘트 + 축회전·주관성모멘트 시뮬레이터</h1>
+    <div class="small">
+      슬라이더로 축을 이동·회전하고, 계산식 전개와 단위를 함께 확인할 수 있습니다.
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>입력</h2>
+
+      <label>단위</label>
+      <select id="unit" onchange="calc();">
+        <option value="mm">mm</option>
+        <option value="cm" selected>cm</option>
+        <option value="m">m</option>
+      </select>
+
+      <label>도형</label>
+      <select id="shape" onchange="toggleInputs();resetSliderLimits();calc();">
+        <option value="rect">직사각형</option>
+        <option value="circle">원</option>
+        <option value="tri">이등변삼각형</option>
+        <option value="righttri">직각삼각형</option>
+      </select>
+
+      <div id="rectInputs">
+        <div class="row">
+          <div><label>가로 b</label><input id="b" type="number" value="20" oninput="resetSliderLimits();calc()"></div>
+          <div><label>세로 h</label><input id="h" type="number" value="30" oninput="resetSliderLimits();calc()"></div>
+        </div>
+      </div>
+
+      <div id="circleInputs" style="display:none">
+        <label>반지름 R</label><input id="r" type="number" value="10" oninput="resetSliderLimits();calc()">
+      </div>
+
+      <div class="box blue" style="margin-top:14px">
+        <h2>기준축 이동</h2>
+        <div class="small">도심 C를 기준으로 y축 위치 a, x축 위치 c를 입력하거나 슬라이더로 이동합니다.</div>
+
+        <label>y축 위치 a <span class="value-chip" id="axisXChip">0</span></label>
+        <div class="range-row">
+          <input id="axisXRange" type="range" value="0" step="0.1" oninput="syncFromRange('axisX');calc()">
+          <input id="axisX" type="number" value="0" step="0.1" oninput="syncFromNumber('axisX');calc()">
+        </div>
+
+        <label>x축 위치 c <span class="value-chip" id="axisYChip">0</span></label>
+        <div class="range-row">
+          <input id="axisYRange" type="range" value="0" step="0.1" oninput="syncFromRange('axisY');calc()">
+          <input id="axisY" type="number" value="0" step="0.1" oninput="syncFromNumber('axisY');calc()">
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="setCentroid()">도심축</button>
+          <button onclick="setBottomLeft()">왼쪽 아래 모서리축</button>
+        </div>
+      </div>
+
+      <div class="box purple" style="margin-top:14px">
+        <h2>축회전</h2>
+        <div class="small">이동된 원점 O′에서 x′축을 반시계방향으로 θ만큼 회전합니다.</div>
+
+        <label>회전각 θ [deg] <span class="value-chip" id="thetaChip">0°</span></label>
+        <div class="range-row">
+          <input id="thetaRange" type="range" min="-90" max="90" value="0" step="0.1" oninput="syncFromRange('theta');calc()">
+          <input id="theta" type="number" value="0" step="0.1" oninput="syncFromNumber('theta');calc()">
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="setTheta(0)">0°</button>
+          <button onclick="setTheta(15)">15°</button>
+          <button onclick="setTheta(30)">30°</button>
+          <button onclick="setPrincipalTheta()">주관성각 적용</button>
+        </div>
+      </div>
+
+      <div class="box green" style="margin-top:14px;line-height:1.8">
+        <div>면적 A = <b id="A"></b> <span id="unitA"></span></div>
+        <div>선택축 기준 도심: x̄ = <b id="xbar"></b>, ȳ = <b id="ybar"></b> <span id="unitL"></span></div>
+        <div>도심축 기준 Ixyc = <b id="Ixyc"></b> <span id="unitIxyc"></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <svg id="svg" viewBox="0 0 500 360"></svg>
+      </div>
+
+      <div class="result">
+        <div class="card blue">
+          <h2>면적 1차 모멘트</h2>
+          <div>Qx = <b id="Qx"></b> <span id="unitQx"></span></div>
+          <div>Qy = <b id="Qy"></b> <span id="unitQy"></span></div>
+          <div class="formula">Qx = Aȳ<br>Qy = Ax̄</div>
+        </div>
+
+        <div class="card orange">
+          <h2>이동축 2차 모멘트</h2>
+          <div>Ix = <b id="Ix"></b> <span id="unitIx"></span></div>
+          <div>Iy = <b id="Iy"></b> <span id="unitIy"></span></div>
+          <div>Ixy = <b id="Ixy"></b> <span id="unitIxy"></span></div>
+          <div class="formula">Ix = Ixc + Aȳ²<br>Iy = Iyc + Ax̄²<br>Ixy = Ixyc + Ax̄ȳ</div>
+        </div>
+
+        <div class="card purple">
+          <h2>회전축 모멘트</h2>
+          <div>Ix′ = <b id="Ixp"></b> <span id="unitIxp"></span></div>
+          <div>Iy′ = <b id="Iyp"></b> <span id="unitIyp"></span></div>
+          <div>Ix′y′ = <b id="Ixyp"></b> <span id="unitIxyp"></span></div>
+          <div class="formula">θ만큼 회전한 축 기준</div>
+        </div>
+
+        <div class="card green">
+          <h2>주관성 결과</h2>
+          <div>주관성각 θp = <b id="thetaP"></b>°</div>
+          <div>Imax = <b id="Imax"></b> <span id="unitImax"></span></div>
+          <div>Imin = <b id="Imin"></b> <span id="unitImin"></span></div>
+          <div class="formula">주축에서는 Ix′y′ = 0</div>
+        </div>
+      </div>
+
+      <div class="card pink">
+        <h2>계산식 전개</h2>
+        <div id="calculationDetail" class="calcbox"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hero" style="line-height:1.8;font-size:14px">
+    <h2>수업용 실습 과제</h2>
+    <div>① 슬라이더로 축을 이동시키며 Qx, Qy, Ix, Iy, Ixy 변화를 관찰한다.</div>
+    <div>② 직각삼각형을 선택하고 도심축에서도 Ixy가 0이 아닌 것을 확인한다.</div>
+    <div>③ 회전각 θ를 조절하면서 Ix′, Iy′, Ix′y′가 변하는 것을 확인한다.</div>
+    <div>④ “주관성각 적용”을 눌러 Ix′y′가 거의 0이 되는지 확인한다.</div>
+  </div>
+</div>
+
+<script>
+function n(id){return Number(document.getElementById(id).value)||0}
+function unit(){return document.getElementById("unit").value}
+function uA(){return unit()+"²"}
+function uQ(){return unit()+"³"}
+function uI(){return unit()+"⁴"}
+function fmt(v){
+  if(!Number.isFinite(v))return "-";
+  if(Math.abs(v)<1e-9)return "0";
+  return Number(v).toLocaleString(undefined,{maximumFractionDigits:3});
+}
+function rad(deg){return deg*Math.PI/180}
+function deg(rad){return rad*180/Math.PI}
+
+function syncFromRange(id){
+  document.getElementById(id).value=document.getElementById(id+"Range").value;
+}
+function syncFromNumber(id){
+  const value=n(id);
+  const range=document.getElementById(id+"Range");
+  if(range){
+    const min=Number(range.min), max=Number(range.max);
+    range.value=Math.max(min,Math.min(max,value));
+  }
+}
+function setChip(id,suffix=""){
+  const chip=document.getElementById(id+"Chip");
+  if(chip) chip.textContent=fmt(n(id))+suffix;
+}
+
+function toggleInputs(){
+  const s=document.getElementById("shape").value;
+  document.getElementById("rectInputs").style.display=s==="circle"?"none":"block";
+  document.getElementById("circleInputs").style.display=s==="circle"?"block":"none";
+}
+
+function sliderRangeSize(){
+  const s=document.getElementById("shape").value,b=n("b"),h=n("h"),r=n("r");
+  if(s==="circle") return Math.max(10, r*1.8);
+  return Math.max(10, Math.max(b,h)*0.9);
+}
+
+function resetSliderLimits(){
+  const L=sliderRangeSize();
+  ["axisXRange","axisYRange"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.min=-L; el.max=L;
+  });
+  syncFromNumber("axisX");
+  syncFromNumber("axisY");
+}
+
+function baseProps(){
+  const s=document.getElementById("shape").value,b=n("b"),h=n("h"),r=n("r");
+  let A=0,Ixc=0,Iyc=0,Ixyc=0, name="";
+  if(s==="rect"){
+    name="직사각형";
+    A=b*h;
+    Ixc=b*Math.pow(h,3)/12;
+    Iyc=h*Math.pow(b,3)/12;
+    Ixyc=0;
+  }else if(s==="circle"){
+    name="원";
+    A=Math.PI*r*r;
+    Ixc=Math.PI*Math.pow(r,4)/4;
+    Iyc=Ixc;
+    Ixyc=0;
+  }else if(s==="tri"){
+    name="이등변삼각형";
+    A=b*h/2;
+    Ixc=b*Math.pow(h,3)/36;
+    Iyc=h*Math.pow(b,3)/48;
+    Ixyc=0;
+  }else if(s==="righttri"){
+    name="직각삼각형";
+    A=b*h/2;
+    Ixc=b*Math.pow(h,3)/36;
+    Iyc=h*Math.pow(b,3)/36;
+    Ixyc=-Math.pow(b,2)*Math.pow(h,2)/72;
+  }
+  return {s,name,b,h,r,A,Ixc,Iyc,Ixyc};
+}
+
+function setCentroid(){
+  document.getElementById("axisX").value=0;
+  document.getElementById("axisY").value=0;
+  syncFromNumber("axisX"); syncFromNumber("axisY");
+  calc();
+}
+
+function setBottomLeft(){
+  const {s,b,h,r}=baseProps();
+  if(s==="rect"){
+    document.getElementById("axisX").value=-b/2;
+    document.getElementById("axisY").value=-h/2;
+  }else if(s==="circle"){
+    document.getElementById("axisX").value=-r;
+    document.getElementById("axisY").value=-r;
+  }else if(s==="tri"){
+    document.getElementById("axisX").value=-b/2;
+    document.getElementById("axisY").value=-h/3;
+  }else if(s==="righttri"){
+    document.getElementById("axisX").value=-b/3;
+    document.getElementById("axisY").value=-h/3;
+  }
+  syncFromNumber("axisX"); syncFromNumber("axisY");
+  calc();
+}
+
+function transformRotation(Ix,Iy,Ixy,thetaDeg){
+  const t=rad(thetaDeg);
+  const c=Math.cos(t), s=Math.sin(t);
+  const Ixp=Ix*c*c + Iy*s*s - 2*Ixy*s*c;
+  const Iyp=Ix*s*s + Iy*c*c + 2*Ixy*s*c;
+  const Ixyp=(Ix-Iy)*s*c + Ixy*(c*c-s*s);
+  return {Ixp,Iyp,Ixyp,c,s};
+}
+
+function principal(Ix,Iy,Ixy){
+  const avg=(Ix+Iy)/2;
+  const diff=(Ix-Iy)/2;
+  const R=Math.sqrt(diff*diff+Ixy*Ixy);
+  const Imax=avg+R;
+  const Imin=avg-R;
+  const thetaP=0.5*Math.atan2(-2*Ixy, Ix-Iy);
+  return {thetaP:deg(thetaP),Imax,Imin,R,avg,diff};
+}
+
+function setTheta(v){
+  document.getElementById("theta").value=v;
+  syncFromNumber("theta");
+  calc();
+}
+
+function setPrincipalTheta(){
+  const vals=currentValues();
+  document.getElementById("theta").value=vals.pr.thetaP.toFixed(3);
+  syncFromNumber("theta");
+  calc();
+}
+
+function currentValues(){
+  const bp=baseProps();
+  const {A,Ixc,Iyc,Ixyc}=bp;
+  const axisX=n("axisX"), axisY=n("axisY");
+  const xbar=-axisX, ybar=-axisY;
+  const Qx=A*ybar, Qy=A*xbar;
+  const Ix=Ixc+A*ybar*ybar;
+  const Iy=Iyc+A*xbar*xbar;
+  const Ixy=Ixyc+A*xbar*ybar;
+  const theta=n("theta");
+  const rot=transformRotation(Ix,Iy,Ixy,theta);
+  const pr=principal(Ix,Iy,Ixy);
+  return {...bp,axisX,axisY,xbar,ybar,Qx,Qy,Ix,Iy,Ixy,theta,rot,pr};
+}
+
+function updateUnitLabels(){
+  const map = {
+    unitA:uA(), unitL:unit(), unitIxyc:uI(),
+    unitQx:uQ(), unitQy:uQ(),
+    unitIx:uI(), unitIy:uI(), unitIxy:uI(),
+    unitIxp:uI(), unitIyp:uI(), unitIxyp:uI(),
+    unitImax:uI(), unitImin:uI()
+  };
+  Object.entries(map).forEach(([id,val])=>document.getElementById(id).textContent=val);
+}
+
+function calculationText(v){
+  const th = rad(v.theta);
+  const c = Math.cos(th), s = Math.sin(th);
+  return `선택 도형: ${v.name}
+단위: ${unit()}
+
+[1] 도심축 기준 기본값
+A = ${fmt(v.A)} ${uA()}
+Ixc = ${fmt(v.Ixc)} ${uI()}
+Iyc = ${fmt(v.Iyc)} ${uI()}
+Ixyc = ${fmt(v.Ixyc)} ${uI()}
+
+[2] 축 이동
+입력한 축 위치: a = ${fmt(v.axisX)} ${unit()}, c = ${fmt(v.axisY)} ${unit()}
+선택축 기준 도심 좌표:
+x̄ = -a = ${fmt(v.xbar)} ${unit()}
+ȳ = -c = ${fmt(v.ybar)} ${unit()}
+
+Qx = Aȳ
+   = ${fmt(v.A)} × ${fmt(v.ybar)}
+   = ${fmt(v.Qx)} ${uQ()}
+
+Qy = Ax̄
+   = ${fmt(v.A)} × ${fmt(v.xbar)}
+   = ${fmt(v.Qy)} ${uQ()}
+
+Ix = Ixc + Aȳ²
+   = ${fmt(v.Ixc)} + ${fmt(v.A)} × (${fmt(v.ybar)})²
+   = ${fmt(v.Ix)} ${uI()}
+
+Iy = Iyc + Ax̄²
+   = ${fmt(v.Iyc)} + ${fmt(v.A)} × (${fmt(v.xbar)})²
+   = ${fmt(v.Iy)} ${uI()}
+
+Ixy = Ixyc + Ax̄ȳ
+    = ${fmt(v.Ixyc)} + ${fmt(v.A)} × ${fmt(v.xbar)} × ${fmt(v.ybar)}
+    = ${fmt(v.Ixy)} ${uI()}
+
+[3] 축 회전
+θ = ${fmt(v.theta)}°
+cosθ = ${fmt(c)}, sinθ = ${fmt(s)}
+
+Ix′ = Ix cos²θ + Iy sin²θ - 2Ixy sinθ cosθ
+    = ${fmt(v.rot.Ixp)} ${uI()}
+
+Iy′ = Ix sin²θ + Iy cos²θ + 2Ixy sinθ cosθ
+    = ${fmt(v.rot.Iyp)} ${uI()}
+
+Ix′y′ = (Ix - Iy)sinθcosθ + Ixy(cos²θ - sin²θ)
+      = ${fmt(v.rot.Ixyp)} ${uI()}
+
+[4] 주관성각과 주관성모멘트
+θp = 1/2 atan2(-2Ixy, Ix - Iy)
+   = ${fmt(v.pr.thetaP)}°
+
+Imax = (Ix+Iy)/2 + √{[(Ix-Iy)/2]² + Ixy²}
+     = ${fmt(v.pr.Imax)} ${uI()}
+
+Imin = (Ix+Iy)/2 - √{[(Ix-Iy)/2]² + Ixy²}
+     = ${fmt(v.pr.Imin)} ${uI()}
+
+※ 주관성각을 적용하면 Ix′y′가 0에 가까워집니다.`;
+}
+
+function calc(){
+  setChip("axisX");
+  setChip("axisY");
+  setChip("theta","°");
+  updateUnitLabels();
+
+  const v=currentValues();
+
+  document.getElementById("A").textContent=fmt(v.A);
+  document.getElementById("xbar").textContent=fmt(v.xbar);
+  document.getElementById("ybar").textContent=fmt(v.ybar);
+  document.getElementById("Ixyc").textContent=fmt(v.Ixyc);
+
+  document.getElementById("Qx").textContent=fmt(v.Qx);
+  document.getElementById("Qy").textContent=fmt(v.Qy);
+  document.getElementById("Ix").textContent=fmt(v.Ix);
+  document.getElementById("Iy").textContent=fmt(v.Iy);
+  document.getElementById("Ixy").textContent=fmt(v.Ixy);
+
+  document.getElementById("Ixp").textContent=fmt(v.rot.Ixp);
+  document.getElementById("Iyp").textContent=fmt(v.rot.Iyp);
+  document.getElementById("Ixyp").textContent=fmt(v.rot.Ixyp);
+
+  document.getElementById("thetaP").textContent=fmt(v.pr.thetaP);
+  document.getElementById("Imax").textContent=fmt(v.pr.Imax);
+  document.getElementById("Imin").textContent=fmt(v.pr.Imin);
+
+  document.getElementById("calculationDetail").textContent=calculationText(v);
+  draw(v);
+}
+
+function draw(v){
+  const {s,b,h,r,axisX,axisY,theta,xbar,ybar}=v;
+  const svg=document.getElementById("svg");
+  svg.innerHTML="";
+  const W=500,H=360,scale=5,cx=W/2,cy=H/2,pad=30;
+  const tx=x=>cx+x*scale, ty=y=>cy-y*scale;
+
+  function el(tag,attrs){
+    let e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+    for(const k in attrs)e.setAttribute(k,attrs[k]);
+    svg.appendChild(e);
+    return e;
+  }
+  function text(x,y,str,size=13,color="#111827",weight="normal"){
+    const t=el("text",{x,y,fill:color,"font-size":size,"font-weight":weight});
+    t.textContent=str;
+    return t;
+  }
+
+  for(let i=-10;i<=10;i++){
+    el("line",{x1:tx(i*5),y1:pad,x2:tx(i*5),y2:H-pad,stroke:"#e5e7eb","stroke-width":0.6});
+    el("line",{x1:pad,y1:ty(i*5),x2:W-pad,y2:ty(i*5),stroke:"#e5e7eb","stroke-width":0.6});
+  }
+
+  if(s==="rect"){
+    el("rect",{x:tx(-b/2),y:ty(h/2),width:b*scale,height:h*scale,rx:3,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+  }else if(s==="circle"){
+    el("circle",{cx:tx(0),cy:ty(0),r:r*scale,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+  }else if(s==="tri"){
+    const pts=[[tx(-b/2),ty(-h/3)],[tx(b/2),ty(-h/3)],[tx(0),ty(2*h/3)]].map(p=>p.join(",")).join(" ");
+    el("polygon",{points:pts,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+  }else if(s==="righttri"){
+    const pts=[[tx(-b/3),ty(-h/3)],[tx(2*b/3),ty(-h/3)],[tx(-b/3),ty(2*h/3)]].map(p=>p.join(",")).join(" ");
+    el("polygon",{points:pts,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+  }
+
+  el("circle",{cx:tx(0),cy:ty(0),r:5,fill:"#111827"});
+  text(tx(0)+8,ty(0)-8,"도심 C",13,"#111827","700");
+
+  el("line",{x1:pad,y1:ty(axisY),x2:W-pad,y2:ty(axisY),stroke:"#2563eb","stroke-width":1.8,"stroke-dasharray":"6 5"});
+  el("line",{x1:tx(axisX),y1:H-pad,x2:tx(axisX),y2:pad,stroke:"#dc2626","stroke-width":1.8,"stroke-dasharray":"6 5"});
+
+  el("circle",{cx:tx(axisX),cy:ty(axisY),r:4,fill:"#6b7280"});
+  text(tx(axisX)+7,ty(axisY)+16,"O′",13,"#6b7280","700");
+
+  const L=210;
+  const th=rad(theta);
+  const ux=[Math.cos(th), Math.sin(th)];
+  const uy=[-Math.sin(th), Math.cos(th)];
+  const ox=tx(axisX), oy=ty(axisY);
+
+  el("line",{x1:ox-L*ux[0],y1:oy+L*ux[1],x2:ox+L*ux[0],y2:oy-L*ux[1],stroke:"#16a34a","stroke-width":2.8});
+  el("line",{x1:ox-L*uy[0],y1:oy+L*uy[1],x2:ox+L*uy[0],y2:oy-L*uy[1],stroke:"#7c3aed","stroke-width":2.8});
+  text(ox+L*ux[0]-26,oy-L*ux[1]-8,"x′축",14,"#16a34a","700");
+  text(ox+L*uy[0]+8,oy-L*uy[1]+18,"y′축",14,"#7c3aed","700");
+
+  el("line",{x1:tx(axisX),y1:ty(axisY),x2:tx(0),y2:ty(axisY),stroke:"#64748b","stroke-dasharray":"5 4"});
+  el("line",{x1:tx(0),y1:ty(axisY),x2:tx(0),y2:ty(0),stroke:"#64748b","stroke-dasharray":"5 4"});
+  text((tx(axisX)+tx(0))/2-15,ty(axisY)+18,"x̄="+fmt(xbar),12,"#475569","700");
+  text(tx(0)+8,(ty(axisY)+ty(0))/2,"ȳ="+fmt(ybar),12,"#475569","700");
+
+  text(14,22,"파랑 점선: x축   빨강 점선: y축   초록 실선: x′축   보라 실선: y′축",12,"#475569","700");
+}
+toggleInputs();
+resetSliderLimits();
+calc();
+</script>
+</body>
+</html>
