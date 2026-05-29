@@ -108,7 +108,7 @@
 
         <label>도형</label>
         <select id="shape" onchange="toggleInputs();resetSliderLimits();calcAll();">
-          <option value="rect">직사각형</option><option value="circle">원</option><option value="tri">이등변삼각형</option><option value="righttri">직각삼각형</option>
+          <option value="rect">직사각형</option><option value="circle">원</option><option value="semicircle">반원</option><option value="tri">이등변삼각형</option><option value="righttri">직각삼각형</option>
         </select>
 
         <div id="rectInputs"><div class="row">
@@ -137,7 +137,15 @@
       </div>
 
       <div>
-        <div class="card"><svg id="svg" viewBox="0 0 500 360"></svg></div>
+        <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap">
+          <span class="small">화면 확대/축소</span>
+          <button onclick="zoomView(1.2)">🔍＋</button>
+          <button onclick="zoomView(1/1.2)">🔍－</button>
+          <button onclick="resetZoom()">100%</button>
+          <span class="value-chip" id="zoomChip">100%</span>
+        </div>
+<svg id="svg" viewBox="0 0 500 360"></svg></div>
         <div class="result">
           <div class="card blue"><h2>면적 1차 모멘트</h2><div>Qx = <b id="Qx"></b> <span id="unitQx"></span></div><div>Qy = <b id="Qy"></b> <span id="unitQy"></span></div><div class="formula">Qx=Aȳ, Qy=Ax̄</div></div>
           <div class="card orange"><h2>이동축 2차 모멘트</h2><div>Ix = <b id="Ix"></b> <span id="unitIx"></span></div><div>Iy = <b id="Iy"></b> <span id="unitIy"></span></div><div>Ixy = <b id="Ixy"></b> <span id="unitIxy"></span></div></div>
@@ -164,7 +172,15 @@
         </div>
       </div>
       <div>
-        <div class="card"><svg id="svg2" viewBox="0 0 500 360"></svg></div>
+        <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap">
+          <span class="small">화면 확대/축소</span>
+          <button onclick="zoomView(1.2)">🔍＋</button>
+          <button onclick="zoomView(1/1.2)">🔍－</button>
+          <button onclick="resetZoom()">100%</button>
+          <span class="value-chip" id="zoomChip2">100%</span>
+        </div>
+<svg id="svg2" viewBox="0 0 500 360"></svg></div>
         <div class="result">
           <div class="card purple"><h2>회전축 (n, t)</h2><div>θ = <b id="theta2"></b>°</div><div>In = <b id="Ixp2"></b> <span class="unitI"></span></div><div>It = <b id="Iyp2"></b> <span class="unitI"></span></div><div>Int = <b id="Ixyp2"></b> <span class="unitI"></span></div></div>
           <div class="card green"><h2>주축</h2><div>θp(min) = <b id="thetaPMin2"></b>°</div><div>θp(max) = <b id="thetaPMax2"></b>°</div><div>Imax = <b id="Imax2"></b> <span class="unitI"></span></div><div>Imin = <b id="Imin2"></b> <span class="unitI"></span></div></div>
@@ -201,22 +217,39 @@
     <div class="grid">
       <div class="card">
         <label>복합단면 선택</label>
-        <select id="compShape" onchange="calcComposite()"><option value="L">ㄱ형 단면</option><option value="C">ㄷ형 단면</option><option value="T">T형 단면</option></select>
+        <select id="compShape" onchange="calcComposite()"><option value="L">ㄱ형 단면</option><option value="C">ㄷ형 단면</option><option value="invT">역T자형 단면</option></select>
         <div class="row">
-          <div><label>전체 폭 B</label><input id="compB" type="number" value="30" oninput="calcComposite()"></div>
-          <div><label>전체 높이 H</label><input id="compH" type="number" value="40" oninput="calcComposite()"></div>
+          <div><label>전체 폭 B</label><input id="compB" type="number" value="30" oninput="resetCompositeSliderLimits();calcComposite()"></div>
+          <div><label>전체 높이 H</label><input id="compH" type="number" value="40" oninput="resetCompositeSliderLimits();calcComposite()"></div>
         </div>
         <div class="row">
-          <div><label>두께 t</label><input id="compT" type="number" value="6" oninput="calcComposite()"></div>
+          <div><label>두께 t</label><input id="compT" type="number" value="6" oninput="resetCompositeSliderLimits();calcComposite()"></div>
           <div><label>단위</label><input value="현재 선택 단위 사용" disabled></div>
+        </div>
+        <div class="box blue" style="margin-top:14px">
+          <h2>복합단면 기준축 이동</h2>
+          <div class="small">복합단면의 도심 C를 기준으로 y축 위치 a, x축 위치 c를 이동합니다.</div>
+          <label>y축 위치 a <span class="value-chip" id="compAxisXChip">0</span></label>
+          <div class="range-row"><input id="compAxisXRange" type="range" value="0" step="0.1" oninput="syncFromRange('compAxisX');calcComposite()"><input id="compAxisX" type="number" value="0" step="0.1" oninput="syncFromNumber('compAxisX');calcComposite()"></div>
+          <label>x축 위치 c <span class="value-chip" id="compAxisYChip">0</span></label>
+          <div class="range-row"><input id="compAxisYRange" type="range" value="0" step="0.1" oninput="syncFromRange('compAxisY');calcComposite()"><input id="compAxisY" type="number" value="0" step="0.1" oninput="syncFromNumber('compAxisY');calcComposite()"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="setCompositeCentroid()">복합 도심축</button></div>
         </div>
         <div class="note" style="margin-top:14px">겹치는 부분은 중복 계산되지 않도록 직사각형을 분할했습니다.</div>
       </div>
       <div>
-        <div class="card"><svg id="compSvg" viewBox="0 0 500 360"></svg></div>
+        <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap">
+          <span class="small">화면 확대/축소</span>
+          <button onclick="zoomView(1.2)">🔍＋</button>
+          <button onclick="zoomView(1/1.2)">🔍－</button>
+          <button onclick="resetZoom()">100%</button>
+          <span class="value-chip" id="compZoomChip">100%</span>
+        </div>
+<svg id="compSvg" viewBox="0 0 500 360"></svg></div>
         <div class="result">
           <div class="card blue"><h2>도심</h2><div>A = <b id="compA"></b> <span class="unitA"></span></div><div>x̄ = <b id="compX"></b>, ȳ = <b id="compY"></b> <span class="unitL2"></span></div></div>
-          <div class="card orange"><h2>도심축 모멘트</h2><div>Ixc = <b id="compIx"></b> <span class="unitI"></span></div><div>Iyc = <b id="compIy"></b> <span class="unitI"></span></div><div>Ixyc = <b id="compIxy"></b> <span class="unitI"></span></div></div>
+          <div class="card orange"><h2>선택축 모멘트</h2><div>Ix = <b id="compIx"></b> <span class="unitI"></span></div><div>Iy = <b id="compIy"></b> <span class="unitI"></span></div><div>Ixy = <b id="compIxy"></b> <span class="unitI"></span></div><div class="formula">도심축에서 이동축으로 변환</div></div>
           <div class="card green"><h2>주관성</h2><div>θp(min) = <b id="compThetaP"></b>°</div><div>Imax = <b id="compImax"></b> <span class="unitI"></span></div><div>Imin = <b id="compImin"></b> <span class="unitI"></span></div></div>
         </div>
       </div>
@@ -234,6 +267,7 @@
 
 <script>
 let comparisons=[];
+let viewZoom=1;
 function n(id){return Number(document.getElementById(id).value)||0}
 function unit(){return document.getElementById("unit").value}
 function uA(){return unit()+"²"} function uQ(){return unit()+"³"} function uI(){return unit()+"⁴"}
@@ -244,17 +278,18 @@ function showTab(name,btn){document.querySelectorAll('.tabpage').forEach(x=>x.cl
 function syncFromRange(id){document.getElementById(id).value=document.getElementById(id+"Range").value}
 function syncFromNumber(id){const value=n(id), range=document.getElementById(id+"Range"); if(range){range.value=Math.max(Number(range.min),Math.min(Number(range.max),value));}}
 function setChip(id,suffix=""){const chip=document.getElementById(id+"Chip"); if(chip) chip.textContent=fmt(n(id))+suffix}
-function toggleInputs(){const s=document.getElementById("shape").value;document.getElementById("rectInputs").style.display=s==="circle"?"none":"block";document.getElementById("circleInputs").style.display=s==="circle"?"block":"none";}
-function sliderRangeSize(){const s=document.getElementById("shape").value,b=n("b"),h=n("h"),r=n("r"); return s==="circle"?Math.max(10,r*1.8):Math.max(10,Math.max(b,h)*0.9)}
+function toggleInputs(){const s=document.getElementById("shape").value;document.getElementById("rectInputs").style.display=(s==="circle"||s==="semicircle")?"none":"block";document.getElementById("circleInputs").style.display=(s==="circle"||s==="semicircle")?"block":"none";}
+function sliderRangeSize(){const s=document.getElementById("shape").value,b=n("b"),h=n("h"),r=n("r"); return (s==="circle"||s==="semicircle")?Math.max(10,r*1.8):Math.max(10,Math.max(b,h)*0.9)}
 function resetSliderLimits(){const L=sliderRangeSize();["axisXRange","axisYRange"].forEach(id=>{const el=document.getElementById(id);el.min=-L;el.max=L;});syncFromNumber("axisX");syncFromNumber("axisY")}
 function baseProps(){const s=document.getElementById("shape").value,b=n("b"),h=n("h"),r=n("r");let A=0,Ixc=0,Iyc=0,Ixyc=0,name="";
  if(s==="rect"){name="직사각형";A=b*h;Ixc=b*h**3/12;Iyc=h*b**3/12;Ixyc=0}
  else if(s==="circle"){name="원";A=Math.PI*r*r;Ixc=Math.PI*r**4/4;Iyc=Ixc;Ixyc=0}
+ else if(s==="semicircle"){name="반원";A=Math.PI*r*r/2;Ixc=r**4*(Math.PI/8-8/(9*Math.PI));Iyc=Math.PI*r**4/8;Ixyc=0}
  else if(s==="tri"){name="이등변삼각형";A=b*h/2;Ixc=b*h**3/36;Iyc=h*b**3/48;Ixyc=0}
  else {name="직각삼각형";A=b*h/2;Ixc=b*h**3/36;Iyc=h*b**3/36;Ixyc=-(b*b*h*h)/72}
  return {s,name,b,h,r,A,Ixc,Iyc,Ixyc};}
 function setCentroid(){axisX.value=0;axisY.value=0;syncFromNumber("axisX");syncFromNumber("axisY");calcAll()}
-function setBottomLeft(){const {s,b,h,r}=baseProps(); if(s==="rect"){axisX.value=-b/2;axisY.value=-h/2}else if(s==="circle"){axisX.value=-r;axisY.value=-r}else if(s==="tri"){axisX.value=-b/2;axisY.value=-h/3}else{axisX.value=-b/3;axisY.value=-h/3}syncFromNumber("axisX");syncFromNumber("axisY");calcAll()}
+function setBottomLeft(){const {s,b,h,r}=baseProps(); if(s==="rect"){axisX.value=-b/2;axisY.value=-h/2}else if(s==="circle"){axisX.value=-r;axisY.value=-r}else if(s==="semicircle"){axisX.value=-r;axisY.value=-(4*r/(3*Math.PI))}else if(s==="tri"){axisX.value=-b/2;axisY.value=-h/3}else{axisX.value=-b/3;axisY.value=-h/3}syncFromNumber("axisX");syncFromNumber("axisY");calcAll()}
 function transformRotation(Ix,Iy,Ixy,thetaDeg){const t=rad(thetaDeg),c=Math.cos(t),s=Math.sin(t);return {Ixp:Ix*c*c+Iy*s*s-2*Ixy*s*c,Iyp:Ix*s*s+Iy*c*c+2*Ixy*s*c,Ixyp:(Ix-Iy)*s*c+Ixy*(c*c-s*s),c,s}}
 function principal(Ix,Iy,Ixy){
   const avg=(Ix+Iy)/2,diff=(Ix-Iy)/2,R=Math.sqrt(diff*diff+Ixy*Ixy);
@@ -268,6 +303,9 @@ function setPrincipalThetaMax(){const vals=currentValues();theta.value=vals.pr.t
 function currentValues(){const bp=baseProps(),{A,Ixc,Iyc,Ixyc}=bp;const ax=n("axisX"),ay=n("axisY"),xbar=-ax,ybar=-ay;const Qx=A*ybar,Qy=A*xbar,Ix=Ixc+A*ybar*ybar,Iy=Iyc+A*xbar*xbar,Ixy=Ixyc+A*xbar*ybar;const th=n("theta"),rot=transformRotation(Ix,Iy,Ixy,th),pr=principal(Ix,Iy,Ixy);return {...bp,axisX:ax,axisY:ay,xbar,ybar,Qx,Qy,Ix,Iy,Ixy,theta:th,rot,pr}}
 function updateUnitLabels(){['unitA'].forEach(id=>elText(id,uA()));document.querySelectorAll('.unitA').forEach(e=>e.textContent=uA());document.querySelectorAll('.unitI').forEach(e=>e.textContent=uI());document.querySelectorAll('.unitL2').forEach(e=>e.textContent=unit());['unitL'].forEach(id=>elText(id,unit()));['unitIxyc','unitIx','unitIy','unitIxy','unitIxp','unitIyp','unitIxyp','unitImax','unitImin'].forEach(id=>elText(id,uI()));['unitQx','unitQy'].forEach(id=>elText(id,uQ()))}
 function elText(id,t){const e=document.getElementById(id); if(e)e.textContent=t}
+function zoomView(f){viewZoom=Math.max(0.25,Math.min(4,viewZoom*f));calcAll()}
+function resetZoom(){viewZoom=1;calcAll()}
+function updateZoomChip(){elText("zoomChip",Math.round(viewZoom*100)+"%");elText("zoomChip2",Math.round(viewZoom*100)+"%");elText("compZoomChip",Math.round(viewZoom*100)+"%")}
 function calculationText(v){const c=Math.cos(rad(v.theta)),s=Math.sin(rad(v.theta));return `선택 도형: ${v.name}
 단위: ${unit()}
 
@@ -305,7 +343,7 @@ Int = (Ix-Iy)sinθcosθ + Ixy(cos²θ-sin²θ) = ${fmt(v.rot.Ixyp)} ${uI()}
 Imax = ${fmt(v.pr.Imax)} ${uI()}
 Imin = ${fmt(v.pr.Imin)} ${uI()}`;}
 function explain(v){if(Math.abs(v.Ixy)<1e-7) return "현재 기준축에서는 상승모멘트 Ixy가 0입니다. 대칭축을 기준으로 잡았거나, 면적의 대각선 치우침이 서로 상쇄된 상태입니다."; return `현재 기준축에서는 Ixy=${fmt(v.Ixy)} ${uI()}로 0이 아닙니다. 이는 면적 분포가 선택한 x축과 y축에 대해 대각선 방향으로 치우쳐 있음을 뜻합니다. 이 경우 주관성각 θp=${fmt(v.pr.thetaP)}°만큼 축을 회전하면 Ix′y′가 0에 가까워집니다.`}
-function calcAll(){setChip("axisX");setChip("axisY");setChip("theta","°");updateUnitLabels();const v=currentValues();
+function calcAll(){setChip("axisX");setChip("axisY");setChip("theta","°");updateZoomChip();updateUnitLabels();const v=currentValues();
  ['A','xbar','ybar','Ixyc','Qx','Qy','Ix','Iy','Ixy'].forEach(id=>elText(id,fmt(v[id])));
  elText('Ixp',fmt(v.rot.Ixp));elText('Iyp',fmt(v.rot.Iyp));elText('Ixyp',fmt(v.rot.Ixyp));
  elText('thetaPMin',fmt(v.pr.thetaMin)); elText('thetaPMax',fmt(v.pr.thetaMax));
@@ -322,9 +360,15 @@ function calcAll(){setChip("axisX");setChip("axisY");setChip("theta","°");updat
 function draw(svgId,v,showPrincipal=false){
  const {s,b,h,r,axisX,axisY,theta,xbar,ybar}=v;
  const svg=document.getElementById(svgId); if(!svg)return; svg.innerHTML="";
- const W=500,H=360,scale=5,cx=W/2,cy=H/2,pad=30,tx=x=>cx+x*scale,ty=y=>cy-y*scale;
+ const W=500,H=360,scale=5*viewZoom,cx=W/2,cy=H/2,pad=30,tx=x=>cx+x*scale,ty=y=>cy-y*scale;
  function el(tag,attrs){let e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e}
  function text(x,y,str,size=13,color="#111827",weight="normal"){const t=el("text",{x,y,fill:color,"font-size":size,"font-weight":weight});t.textContent=str;return t}
+ function centroidSymbol(x,y){
+   el("circle",{cx:x,cy:y,r:7,fill:"#111827",stroke:"#111827","stroke-width":1});
+   el("line",{x1:x-10,y1:y,x2:x+10,y2:y,stroke:"#dc2626","stroke-width":1.4});
+   el("line",{x1:x,y1:y-10,x2:x,y2:y+10,stroke:"#16a34a","stroke-width":1.4});
+   el("circle",{cx:x,cy:y,r:2.2,fill:"#f8fafc"});
+ }
 
  // arrow markers
  const defs=el("defs",{});
@@ -346,11 +390,18 @@ function draw(svgId,v,showPrincipal=false){
 
  if(s==="rect")el("rect",{x:tx(-b/2),y:ty(h/2),width:b*scale,height:h*scale,rx:3,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
  else if(s==="circle")el("circle",{cx:tx(0),cy:ty(0),r:r*scale,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+ else if(s==="semicircle"){
+   const yc=4*r/(3*Math.PI);       // 도심에서 지름선까지의 거리
+   const baseY=-yc;                // 도심 C가 원점이 되도록 지름선을 아래로 이동
+   const x1=tx(-r), y1=ty(baseY), x2=tx(r), y2=ty(baseY);
+   const d=`M ${x1} ${y1} A ${r*scale} ${r*scale} 0 0 1 ${x2} ${y2} L ${x1} ${y1} Z`;
+   el("path",{d,fill:"#eef4ff",stroke:"#334155","stroke-width":2});
+ }
  else if(s==="tri")el("polygon",{points:[[tx(-b/2),ty(-h/3)],[tx(b/2),ty(-h/3)],[tx(0),ty(2*h/3)]].map(p=>p.join(",")).join(" "),fill:"#eef4ff",stroke:"#334155","stroke-width":2});
  else el("polygon",{points:[[tx(-b/3),ty(-h/3)],[tx(2*b/3),ty(-h/3)],[tx(-b/3),ty(2*h/3)]].map(p=>p.join(",")).join(" "),fill:"#eef4ff",stroke:"#334155","stroke-width":2});
 
- el("circle",{cx:tx(0),cy:ty(0),r:5,fill:"#111827"});
- text(tx(0)+8,ty(0)-8,"도심 C",13,"#111827","700");
+ centroidSymbol(tx(0),ty(0));
+ text(tx(0)+12,ty(0)-10,"도심 C",13,"#111827","700");
 
  const ox=tx(axisX), oy=ty(axisY);
  el("circle",{cx:ox,cy:oy,r:4,fill:"#6b7280"});
@@ -380,17 +431,30 @@ function draw(svgId,v,showPrincipal=false){
 function addComparison(){const v=currentValues();comparisons.push({label:v.name+" / a="+fmt(v.axisX)+", c="+fmt(v.axisY)+", θ="+fmt(v.theta),Qx:v.Qx,Qy:v.Qy,Ix:v.Ix,Iy:v.Iy,Ixy:v.Ixy,Ixp:v.rot.Ixp,Iyp:v.rot.Iyp,Ixyp:v.rot.Ixyp});renderComparison()}
 function clearComparison(){comparisons=[];renderComparison()}
 function renderComparison(){const table=document.getElementById("compareTable");if(!table)return;if(comparisons.length===0){table.innerHTML="<tr><th>저장된 비교값 없음</th></tr>";return}let html="<tr><th>조건</th><th>Qx</th><th>Qy</th><th>Ix</th><th>Iy</th><th>Ixy</th><th>In</th><th>It</th><th>Int</th></tr>";comparisons.forEach(r=>{html+=`<tr><td>${r.label}</td><td>${fmt(r.Qx)}</td><td>${fmt(r.Qy)}</td><td>${fmt(r.Ix)}</td><td>${fmt(r.Iy)}</td><td>${fmt(r.Ixy)}</td><td>${fmt(r.Ixp)}</td><td>${fmt(r.Iyp)}</td><td>${fmt(r.Ixyp)}</td></tr>`});table.innerHTML=html}
-function calcComposite(){const kind=document.getElementById('compShape')?.value;if(!kind)return;const B=n('compB'),H=n('compH'),t=n('compT');let rects=[];
+function resetCompositeSliderLimits(){const B=n('compB'),H=n('compH'),L=Math.max(10,Math.max(B,H)*0.9);['compAxisXRange','compAxisYRange'].forEach(id=>{const el=document.getElementById(id);if(el){el.min=-L;el.max=L;}});syncFromNumber('compAxisX');syncFromNumber('compAxisY')}
+function setCompositeCentroid(){const ax=document.getElementById('compAxisX'),ay=document.getElementById('compAxisY');if(ax)ax.value=0;if(ay)ay.value=0;syncFromNumber('compAxisX');syncFromNumber('compAxisY');calcComposite()}
+function updateCompositeChips(){elText('compAxisXChip',fmt(n('compAxisX')));elText('compAxisYChip',fmt(n('compAxisY')))}
+function calcComposite(){const kind=document.getElementById('compShape')?.value;if(!kind)return;updateCompositeChips();
+ const B=n('compB'),H=n('compH'),t=n('compT');let rects=[];
  if(kind==="L"){rects=[{x:t/2,y:H/2,w:t,h:H},{x:t+(B-t)/2,y:t/2,w:B-t,h:t}]}
  else if(kind==="C"){rects=[{x:t/2,y:H/2,w:t,h:H},{x:t+(B-t)/2,y:t/2,w:B-t,h:t},{x:t+(B-t)/2,y:H-t/2,w:B-t,h:t}]}
- else {rects=[{x:B/2,y:H-t/2,w:B,h:t},{x:B/2,y:(H-t)/2,w:t,h:H-t}]}
+ else {rects=[{x:B/2,y:t/2,w:B,h:t},{x:B/2,y:t+(H-t)/2,w:t,h:H-t}]}
  const A=rects.reduce((s,r)=>s+r.w*r.h,0), X=rects.reduce((s,r)=>s+r.w*r.h*r.x,0)/A, Y=rects.reduce((s,r)=>s+r.w*r.h*r.y,0)/A;
- let Ix=0,Iy=0,Ixy=0;rects.forEach(r=>{const a=r.w*r.h,dx=r.x-X,dy=r.y-Y;Ix+=r.w*r.h**3/12+a*dy*dy;Iy+=r.h*r.w**3/12+a*dx*dx;Ixy+=a*dx*dy});
- const pr=principal(Ix,Iy,Ixy);elText('compA',fmt(A));elText('compX',fmt(X));elText('compY',fmt(Y));elText('compIx',fmt(Ix));elText('compIy',fmt(Iy));elText('compIxy',fmt(Ixy));elText('compThetaP',fmt(pr.thetaMin));elText('compImax',fmt(pr.Imax));elText('compImin',fmt(pr.Imin));drawComposite(rects,X,Y,B,H)}
-function drawComposite(rects,X,Y,B,H){const svg=document.getElementById('compSvg');if(!svg)return;svg.innerHTML="";const W=500,HH=360,scale=Math.min(7,260/Math.max(B,H)),cx=W/2-B*scale/2,cy=HH/2+H*scale/2;const tx=x=>cx+x*scale,ty=y=>cy-y*scale;function el(tag,attrs){let e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e}function text(x,y,str){const t=el("text",{x,y,fill:"#111827","font-size":13,"font-weight":700});t.textContent=str}
+ let Ixc=0,Iyc=0,Ixyc=0;rects.forEach(r=>{const a=r.w*r.h,dx=r.x-X,dy=r.y-Y;Ixc+=r.w*r.h**3/12+a*dy*dy;Iyc+=r.h*r.w**3/12+a*dx*dx;Ixyc+=a*dx*dy});
+ const ax=n('compAxisX'), ay=n('compAxisY'), xbar=-ax, ybar=-ay;
+ const Ix=Ixc+A*ybar*ybar, Iy=Iyc+A*xbar*xbar, Ixy=Ixyc+A*xbar*ybar;
+ const pr=principal(Ix,Iy,Ixy);elText('compA',fmt(A));elText('compX',fmt(X));elText('compY',fmt(Y));elText('compIx',fmt(Ix));elText('compIy',fmt(Iy));elText('compIxy',fmt(Ixy));elText('compThetaP',fmt(pr.thetaMin));elText('compImax',fmt(pr.Imax));elText('compImin',fmt(pr.Imin));drawComposite(rects,X,Y,B,H,ax,ay)}
+function drawComposite(rects,X,Y,B,H,axisX=0,axisY=0){const svg=document.getElementById('compSvg');if(!svg)return;svg.innerHTML="";const W=500,HH=360,scale=Math.min(7,260/Math.max(B,H))*viewZoom,cx=W/2-B*scale/2,cy=HH/2+H*scale/2;const tx=x=>cx+x*scale,ty=y=>cy-y*scale;function el(tag,attrs){let e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)e.setAttribute(k,attrs[k]);svg.appendChild(e);return e}function text(x,y,str,color="#111827"){const t=el("text",{x,y,fill:color,"font-size":13,"font-weight":700});t.textContent=str}
+ function centroidSymbol(x,y){
+   el("circle",{cx:x,cy:y,r:7,fill:"#111827",stroke:"#111827","stroke-width":1});
+   el("line",{x1:x-10,y1:y,x2:x+10,y2:y,stroke:"#dc2626","stroke-width":1.4});
+   el("line",{x1:x,y1:y-10,x2:x,y2:y+10,stroke:"#16a34a","stroke-width":1.4});
+   el("circle",{cx:x,cy:y,r:2.2,fill:"#f8fafc"});
+ }
+ const defs=el("defs",{});function marker(id,color){const m=document.createElementNS("http://www.w3.org/2000/svg","marker");m.setAttribute("id",id);m.setAttribute("markerWidth","7");m.setAttribute("markerHeight","7");m.setAttribute("refX","5.8");m.setAttribute("refY","3.5");m.setAttribute("orient","auto");m.setAttribute("markerUnits","strokeWidth");const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d","M0,0 L7,3.5 L0,7 Z");p.setAttribute("fill",color);m.appendChild(p);defs.appendChild(m)}marker("compArrowRed","#dc2626");marker("compArrowGreen","#16a34a");
  rects.forEach((r,i)=>el("rect",{x:tx(r.x-r.w/2),y:ty(r.y+r.h/2),width:r.w*scale,height:r.h*scale,fill:i%2?"#dbeafe":"#dcfce7",stroke:"#334155","stroke-width":2}));
- el("circle",{cx:tx(X),cy:ty(Y),r:5,fill:"#dc2626"});text(tx(X)+8,ty(Y)-8,"도심 C");el("line",{x1:tx(X),y1:30,x2:tx(X),y2:330,stroke:"#dc2626","stroke-dasharray":"6 5"});el("line",{x1:40,y1:ty(Y),x2:460,y2:ty(Y),stroke:"#2563eb","stroke-dasharray":"6 5"});}
-toggleInputs();resetSliderLimits();calcAll();
+ centroidSymbol(tx(X),ty(Y));text(tx(X)+12,ty(Y)-10,"도심 C");const ox=tx(X+axisX),oy=ty(Y+axisY);el("circle",{cx:ox,cy:oy,r:4,fill:"#6b7280"});text(ox+7,oy+16,"O","#6b7280");el("line",{x1:40,y1:oy,x2:460,y2:oy,stroke:"#dc2626","stroke-width":1.7,"marker-end":"url(#compArrowRed)"});el("line",{x1:ox,y1:330,x2:ox,y2:30,stroke:"#16a34a","stroke-width":1.7,"marker-end":"url(#compArrowGreen)"});text(462,oy-8,"x","#dc2626");text(ox+8,28,"y","#16a34a");text(14,22,"빨강 실선:x축   초록 실선:y축   슬라이더로 축 위치 이동","#475569")}
+toggleInputs();resetSliderLimits();resetCompositeSliderLimits();calcAll();
 </script>
 </body>
 </html>
